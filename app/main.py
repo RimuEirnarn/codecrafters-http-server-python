@@ -48,9 +48,14 @@ def to_header(header: HTTPHeader) -> bytes:
 
 def respond(status: tuple[int, str],
             header: HTTPHeader = HTTPHeader(),
+            payload: str | bytes = '',
             ver: str = "HTTP/1.1") -> bytes:
+    if isinstance(payload, (memoryview, bytearray)):
+        raise TypeError(f"Expected bytes or str, got {type(payload).__name__}")
     s = f'{ver} {status[0]} {status[1]}\r\n'.encode()
-    s += (to_header(header) or b'\r\n')
+    s += to_header(header) + b'\r\n\r\n'
+    s += (payload if isinstance(payload, bytes) else payload.encode())
+    print(s)
     return s
 
 def main():
@@ -66,8 +71,16 @@ def main():
     data = read(client)
     print(data)
 
-    if data[0].path == '/':
-        client.send(respond((200, 'OK')))
+    if data[0].path.startswith('/echo/'):
+        content = data[0].path.replace('/echo/', '', 1)
+        header = HTTPHeader({
+            'Content-Type': 'text/plain',
+            'Content-Length': len(content)
+        })
+        client.send(respond((200, 'OK'),
+                            header,
+                            content
+        ))
     else:
         client.send(respond((404, 'NOT FOUND')))
 
