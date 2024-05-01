@@ -84,6 +84,18 @@ def main():
                             header,
                             content
         ))
+
+    if data[0].path == '/user-agent':
+        content = data[1].get('User-Agent', '')
+        header = HTTPHeader({
+            'Content-Type': 'text/plain',
+            'Content-Length': len(content)
+        })
+        client.send(respond((200, 'OK'),
+                            header,
+                            content
+        ))
+
     else:
         client.send(respond((404, 'NOT FOUND')))
 
