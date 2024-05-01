@@ -104,7 +104,7 @@ def on_files(client: socket.socket,
     filename = join(directory, data[0].path.replace('/files/', '', 1))
 
     if not exists(filename):
-        return client.send(respond((404, "NOT FOUND")))
+        return client.send(respond((404, "Not Found")))
 
     with open(filename) as file:
         content = file.read()
@@ -119,10 +119,22 @@ def on_files(client: socket.socket,
         content
     ))
 
+def on_files_upload(client: socket.socket,
+                    data: tuple[HTTPRequest, HTTPHeader, str]):
+    directory = argv_data['--directory']
+    filename = join(directory, data[0].path.replace('/files/', '', 1))
+
+    payload = data[2]
+    with open(filename, 'w') as file:
+        file.write(payload)
+    client.send(respond(
+        (201, "Created")
+    ))
 
 def thread_cycle(client: socket.socket, addr: tuple[str, int]):
     print(f"Connected to {addr[0]}:{addr[1]}")
     data = read(client)
+    stat, _, _ = data
     print(data)
 
     if data[0].path == '/':
@@ -132,12 +144,15 @@ def thread_cycle(client: socket.socket, addr: tuple[str, int]):
         on_echo(client, data)
 
     if data[0].path.startswith('/files'):
-        on_files(client, data)
+        if stat.method == 'GET':
+            on_files(client, data)
+        if stat.method == 'POST':
+            on_files_upload(client, data)
 
     if data[0].path == '/user-agent':
         on_useragent(client, data)
     else:
-        client.send(respond((404, 'NOT FOUND')))
+        client.send(respond((404, 'Not Found')))
 
     client.close()
 
