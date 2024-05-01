@@ -71,6 +71,9 @@ def main():
     data = read(client)
     print(data)
 
+    if data[0].path == '/':
+        client.send(respond((200, 'OK')))
+
     if data[0].path.startswith('/echo/'):
         content = data[0].path.replace('/echo/', '', 1)
         header = HTTPHeader({
