@@ -1,6 +1,7 @@
 # Uncomment this to pass the first stage
 import socket
 from typing import NamedTuple
+from threading import Thread
 
 class HTTPRequest(NamedTuple):
     method: str
@@ -58,15 +59,7 @@ def respond(status: tuple[int, str],
     print(s)
     return s
 
-def main():
-    # You can use print statements as follows for debugging, they'll be visible when running tests.
-    print("Logs from your program will appear here!")
-
-    # Uncomment this to pass the first stage
-    
-    server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
-    client, addr = server_socket.accept() # wait for client
-    
+def thread_cycle(client: socket.socket, addr: tuple[str, int]):
     print(f"Connected to {addr[0]}:{addr[1]}")
     data = read(client)
     print(data)
@@ -100,6 +93,21 @@ def main():
         client.send(respond((404, 'NOT FOUND')))
 
     client.close()
+
+
+def main():
+    # You can use print statements as follows for debugging, they'll be visible when running tests.
+    print("Logs from your program will appear here!")
+
+    # Uncomment this to pass the first stage
+    
+    server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
+    
+    while True:
+        client, addr = server_socket.accept() # wait for client
+        thread = Thread(target=thread_cycle, args=(client, addr))
+        thread.start()
+
     server_socket.close()
 
 if __name__ == "__main__":
